@@ -1,10 +1,14 @@
 const mysql = require('mysql2/promise');
+
 const pool = mysql.createPool({
-  host: 'sql12.freesqldatabase.com',
-  user: 'sql12650075',
-  password: 'IGZgeBfy3B',
-  database: 'sql12650075',
-  port: 3306, // Port number for MySQL
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 module.exports = pool;

@@ -10,7 +10,7 @@
   <%- include('includes/header') %>
   <main id="all-posts">
     <h1>All Posts</h1>
-    <% if(posts === [] || posts.length === 0){ %>
+    <% if(!posts || posts.length === 0) { %>
        <p>OOPS!, No Posts Found Please make sure to check create post section.</p>
        <a href="/new-post" class="btn">Create new-post</a>
    <% } else {%>

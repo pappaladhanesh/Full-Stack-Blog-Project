@@ -54,3 +54,11 @@
 #body {
   white-space: pre-wrap; /* This ensures that line breaks and whitespace are kept */
 }
+
+
+.author-line {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.6rem;
+}

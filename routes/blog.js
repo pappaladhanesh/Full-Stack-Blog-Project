@@ -1,83 +1,120 @@
 const express = require('express'); 
 const router  = express.Router();
 const db      = require('../database/blog');
-router.get('/',(req,res)=>{
-   res.redirect('/posts');
-});
-router.get('/posts',async (req,res)=>{
-    const [posts]=await db.query('SELECT posts.*,author.name FROM posts INNER JOIN author ON author_id = author.id');
-    console.log(posts);
-   res.render('posts-list.ejs',{posts:posts});
+
+// Home redirect
+router.get('/', (req, res) => {
+  res.redirect('/posts');
 });
 
-router.get('/new-post',async (req,res)=>{
-    const [authors] = await db.query('select * from author');
-    res.render('create-post.ejs', { authors: authors });
- });
+// List posts
+router.get('/posts', async (req, res) => {
+  const [posts] = await db.query(
+    `SELECT posts.*, author.name AS author_name
+     FROM posts 
+     INNER JOIN author ON posts.author_id = author.id`
+  );
 
- router.post('/posts',async (req,res)=>{
-    const data = [
-        req.body.title,
-        req.body.summary,
-        req.body.content,
-        req.body.author
-    ]
-     await db.query('insert into posts (title,summary,body,author_id) values (?)',[data]);
-    
+  res.render('posts-list.ejs', { posts });
+});
+
+// New post form
+router.get('/new-post', async (req, res) => {
+  const [authors] = await db.query("SELECT * FROM author");
+
+  res.render("create-post.ejs", {
+    authors: authors || []
+  });
+});
+
+// Create post
+router.post('/posts', async (req, res, next) => {
+  try {
+    console.log("FORM DATA:", req.body);
+
+    const query = `
+      INSERT INTO posts (title, summary, body, author_id)
+      VALUES (?, ?, ?, ?)
+    `;
+    await db.query(query, [
+      req.body.title,
+      req.body.summary,
+      req.body.content,
+      req.body.author,
+    ]);
+
     res.redirect('/posts');
- });
- // View post dynamic path
+  } catch (err) {
+    console.log("INSERT ERROR:", err);
+    next(err);
+  }
+});
+
+// View post detail
 router.get('/posts/:id', async (req, res) => {
-   const postId = req.params.id;
-   const query = 'SELECT posts.*, author.name AS author_name, author.email AS author_email FROM posts INNER JOIN author ON posts.author_id = author.id WHERE posts.id = ?';
-   const [post] = await db.query(query, [postId]);
-   if (!post || post.length === 0) {
-       return res.status(404).render('404'); // Post not found, render a 404 page
-   }
-   const postdata = {
-      ...post[0],
-      date: post[0].date ? post[0].date.toISOString() : null,
-      humanreadabledate: post[0].date.toLocaleDateString('en-US',{
-         weekday: 'long',
-         month:'long',
-         year:'numeric',
-         day:'numeric'
-      })
-   }
-   res.render('post-detail.ejs', { post: postdata });
+  const [rows] = await db.query(
+    `SELECT posts.*, author.name AS author_name, author.email AS author_email
+     FROM posts
+     INNER JOIN author ON posts.author_id = author.id
+     WHERE posts.id = ?`,
+    [req.params.id]
+  );
+
+  if (!rows || rows.length === 0) {
+    return res.status(404).render("404");
+  }
+
+  const post = rows[0];
+  const dateObj = post.date ? new Date(post.date) : null;
+
+  const postdata = {
+    ...post,
+    date: dateObj ? dateObj.toISOString() : null,
+    humanreadabledate: dateObj
+      ? dateObj.toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long",
+          year: "numeric",
+          day: "numeric",
+        })
+      : null,
+  };
+
+  res.render("post-detail.ejs", { post: postdata });
 });
 
-//update the posts
-router.get('/posts/:id/edit',async(req,res)=>{
-   const query  = `select * from posts
-                   where id = ?`;
-   const [post] = await db.query(query,[req.params.id]);
-   
+// Edit post form
+router.get('/posts/:id/edit', async (req, res) => {
+  const [rows] = await db.query(`SELECT * FROM posts WHERE id = ?`, [req.params.id]);
 
-   if (!post || post.length === 0) {
-      return res.status(404).render('404'); // Post not found, render a 404 page
-   }
-   res.render('update-post.ejs',{post:post[0]});
+  if (!rows || rows.length === 0) {
+    return res.status(404).render('404');
+  }
+
+  res.render('update-post.ejs', { post: rows[0] });
 });
-//update post getting POST req
-router.post('/posts/:id/edit',async(req,res)=>{
-   const query = `update posts 
-   set title = ? , summary = ? ,body = ? 
-   where id = ? ` ;
-   db.query(query,[
+
+// Save edited post
+router.post('/posts/:id/edit', async (req, res) => {
+  await db.query(
+    `UPDATE posts
+     SET title = ?, summary = ?, body = ?
+     WHERE id = ?`,
+    [
       req.body.title,
       req.body.summary,
       req.body.content,
       req.params.id
-   ])
-   res.redirect('/posts');
+    ]
+  );
+
+  res.redirect('/posts');
 });
 
-//deleting post
-router.post('/posts/:id/delete',async(req,res)=>{
-   const query = `delete from posts
-                  where id = ?`;
-  await db.query(query,[req.params.id]);
-   res.redirect('/posts');
-})
+// Delete post
+router.post('/posts/:id/delete', async (req, res) => {
+  await db.query(`DELETE FROM posts WHERE id = ?`, [req.params.id]);
+  res.redirect('/posts');
+});
+
 module.exports = router;

@@ -118,3 +118,21 @@ router.post('/posts/:id/delete', async (req, res) => {
 });
 
 module.exports = router;
+
+// Add author form
+router.get('/authors/new', (req, res) => {
+  res.render('create-author.ejs');
+});
+
+// Save new author
+router.post('/authors/new', async (req, res) => {
+  const { name, email } = req.body;
+
+  await db.query(
+    "INSERT INTO author (name, email) VALUES (?, ?)",
+    [name, email]
+  );
+
+  res.redirect('/new-post');
+});
+

@@ -60,4 +60,4 @@ To get a copy of this project up and running on your local machine, follow these
    http://localhost:3000
 ```
 ## You can check out the deployed MyBlog website at:
-[full-stack-blog-project-production.up.railway.app](#full-stack-blog-project-production.up.railway.app)
+[Live Demo](https://full-stack-blog-project-production.up.railway.app)

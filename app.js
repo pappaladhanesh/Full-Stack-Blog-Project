@@ -1,6 +1,9 @@
 const path = require('path');
 const express = require('express');
 
+// IMPORTANT for Railway: auto-create DB on start
+require('./init-db');
+
 const blogRoutes = require('./routes/blog');
 
 const app = express();
@@ -9,17 +12,20 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(express.urlencoded({ extended: true })); // Parse incoming request bodies
-app.use(express.static('public')); // Serve static files (e.g. CSS files)
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public'))); // fix absolute path for railway
 
 app.use(blogRoutes);
 
+// Error handling
 app.use(function (error, req, res, next) {
   console.log(error);
   res.status(500).render('500');
 });
 
+// Railway requires dynamic port
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log('Server running on port ' + PORT);
+  console.log("Server running on port " + PORT);
 });
